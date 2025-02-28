@@ -1,0 +1,16 @@
+Time=$(date)
+USER DETAILS=$(grep "^$(whoami):" /etc/passwd)
+REPO=$(git rev-parse --show-toplevel 2>/dev/null)
+BRANCH=$(git branch --show-current 2>/dev/null)
+VERSIONID=$(grep "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+-------------------------------------------
+{PRINT ALL FILES AND FOLDER IN RECURSIVE MODE of the repository}
+
+# Prepare Output
+  echo "Time: $TIME"
+  echo "USER DETAILS: $USER_DETAILS"
+  echo "REPO: $REPO"
+  echo "BRANCH: $BRANCH"
+  echo "VERSIONID: $VERSIONID"
+
+  ls -R /path/to/directory
