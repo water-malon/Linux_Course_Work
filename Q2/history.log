@@ -1,0 +1,35 @@
+    1  cd
+    2  mkdir Q2_ENV && cd Q2_ENV
+    3  python3 -m venv ENVIORMENT VIRUAL
+    4  ./ENVIORMENT VIRUAL/Scripts/activate
+    5  ls
+    6  rm -r VIRUAL/
+    7  ls
+    8  rm -r ENVIORMENT/
+    9  python3 -m venv ENVIORMENT_VIRUAL
+   10  ./ENVIORMENT_VIRUAL/Scripts/activate
+   11  cd ENVIORMENT_VIRUAL/
+   12  ./ENVIORMENT_VIRUAL/Scripts/activate
+   13  ls
+   14  ./source ./activate
+   15  .code
+   16  code .
+   17  ./source ./activate
+   18  source bin/activate
+   19  pip install numpy
+   20  cd 
+   21  Linux_Course_Work/
+   22  cd Linux_Course_Work/
+   23  cd CODE/
+   24  mv py1.py ~/Q2/
+   25  mv py1.py ../Q2/
+   26  cd ../Q2
+   27  chmod +x py1.py 
+   28  python py1.py > q2_output.txt
+   29  touch requirments.txt
+   30  rm -r requirments.txt 
+   31  nano requirements.txt
+   32  ls
+   33  pip freeze > requirements.txt
+   34  python py1.py >> q2_output.txt
+   35  touch history.log && history >> history.log
