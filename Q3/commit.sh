@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# Ensure the CSV file exists
 CSV_FILE="DevBug.csv"
+HISTORY_FILE="Q3/commit_history.txt"
+
+# Ensure the CSV file exists
 if [[ ! -f "$CSV_FILE" ]]; then
-    echo "CSV file '$CSV_FILE' not found!"
+    echo "Error: CSV file '$CSV_FILE' not found!" >&2
     exit 1
 fi
 
@@ -19,14 +21,24 @@ COMMIT_MESSAGE=$(echo $data | sed "s/CurrentDateTime:/CurrentDateTime:$CURRENT_D
 # Extract the repository path from the CSV file
 REPO_PATH=$(awk -F',' 'NR==2 {print $6}' "$CSV_FILE")
 
+# Ensure the repository path exists
+if [[ ! -d "$REPO_PATH" ]]; then
+    echo "Error: Repository path '$REPO_PATH' not found!" >&2
+    exit 1
+fi
+
 # Navigate to the repository path
-cd "$REPO_PATH" || { echo "Repository path not found"; exit 1; }
+cd "$REPO_PATH" || { echo "Error: Failed to navigate to '$REPO_PATH'" >&2; exit 1; }
 
 # Stage all changes
 git add .
 
 # Commit the changes with the formatted message
 git commit -m "$COMMIT_MESSAGE"
+if [[ $? -ne 0 ]]; then
+    echo "Error: Commit failed!" >&2
+    exit 1
+fi
 
 # Extract the branch name from the commit message
 BRANCH_NAME=$(echo $COMMIT_MESSAGE | awk -F':' '{print $6}')
@@ -43,3 +55,20 @@ fi
 
 # Push the changes to the remote repository
 git push origin "$BRANCH_NAME"
+if [[ $? -ne 0 ]]; then
+    echo "Error: Push failed!" >&2
+    exit 1
+fi
+
+# Ensure the history file exists
+mkdir -p Q3
+touch "$HISTORY_FILE"
+
+# Print the commit history to the file
+git log > "$HISTORY_FILE"
+if [[ $? -ne 0 ]]; then
+    echo "Error: Failed to write commit history to '$HISTORY_FILE'" >&2
+    exit 1
+fi
+
+echo "Script executed successfully. Commit history saved to '$HISTORY_FILE'."
