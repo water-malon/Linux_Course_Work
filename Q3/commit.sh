@@ -1,9 +1,9 @@
 #!/bin/bash
 
 CSV_FILE="DevBug.csv"
-HISTORY_FILE="Q3/commit_history.txt"
+HISTORY_FILE="commit_history.txt"
 
-# Ensure the CSV file exists
+# Ensure the CSV file exists in the same directory as the script
 if [[ ! -f "$CSV_FILE" ]]; then
     echo "Error: CSV file '$CSV_FILE' not found!" >&2
     exit 1
@@ -17,18 +17,6 @@ CURRENT_DATE_TIME=$(date "+%Y-%m-%d %H:%M:%S")
 
 # Append current date and time to the data
 COMMIT_MESSAGE=$(echo $data | sed "s/CurrentDateTime:/CurrentDateTime:$CURRENT_DATE_TIME:/")
-
-# Extract the repository path from the CSV file
-REPO_PATH=$(awk -F',' 'NR==2 {print $6}' "$CSV_FILE")
-
-# Ensure the repository path exists
-if [[ ! -d "$REPO_PATH" ]]; then
-    echo "Error: Repository path '$REPO_PATH' not found!" >&2
-    exit 1
-fi
-
-# Navigate to the repository path
-cd "$REPO_PATH" || { echo "Error: Failed to navigate to '$REPO_PATH'" >&2; exit 1; }
 
 # Stage all changes
 git add .
@@ -61,7 +49,6 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # Ensure the history file exists
-mkdir -p Q3
 touch "$HISTORY_FILE"
 
 # Print the commit history to the file
