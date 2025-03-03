@@ -1,0 +1,4 @@
+Plant: Plant height (comma-separated if multiple): Plant leaf count (comma-separated if multiple): Plant dry weight (comma-separated if multiple): Plant: lily
+Height data: [4.0, 6.0, 5.0, 8.0, 10.0, 11.0] cm
+Leaf count data: [2, 5, 2, 3, 6, 4]
+Dry weight data: [2.0, 2.1, 3.0, 4.0, 1.9, 3.5] g
