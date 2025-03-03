@@ -1,0 +1,202 @@
+#!/bin/bash
+
+# Define constants
+CSV_FILE="q5_data.csv"
+OUTPUT_FILE="5_output.txt"
+GITHUB_REPO_URL="https://github.com/water-malon/Linux_Course_Work.git"
+DOCKER_IMAGE_NAME="bash_script_image"
+SQLITE_DB="plant_data.db"
+R_CONTAINER_NAME="r_analysis_container"
+
+# Function to create a new CSV file
+function create_csv() {
+    echo "Enter the name for the new CSV file:"
+    read csv_name
+    echo "Date collected,Species,Sex,Weight" > $csv_name
+    echo "CSV file $csv_name created successfully."
+}
+
+# Function to display CSV data with row index
+function display_csv() {
+    if [[ ! -f $CSV_FILE ]]; then
+        echo "CSV file not found."
+        return
+    fi
+    nl -ba $CSV_FILE | tee -a $OUTPUT_FILE
+}
+
+# Function to add a new row to the CSV file
+function add_row() {
+    if [[ ! -f $CSV_FILE ]]; then
+        echo "CSV file not found."
+        return
+    fi
+    echo "Enter Date collected (e.g., 1/8):"
+    read date_collected
+    echo "Enter Species (e.g., PF):"
+    read species
+    echo "Enter Sex (M/F):"
+    read sex
+    echo "Enter Weight:"
+    read weight
+    echo "$date_collected,$species,$sex,$weight" >> $CSV_FILE
+    echo "New row added successfully."
+}
+
+# Function to display data by species and calculate average weight
+function display_by_species() {
+    if [[ ! -f $CSV_FILE ]]; then
+        echo "CSV file not found."
+        return
+    fi
+    echo "Enter Species (e.g., OT):"
+    read species
+    awk -v sp="$species" -F, '$2 == sp' $CSV_FILE | nl -ba | tee -a $OUTPUT_FILE
+    awk -v sp="$species" -F, '$2 == sp {sum += $4; count++} END {print "Average weight: ", sum/count}' $CSV_FILE | tee -a $OUTPUT_FILE
+}
+
+# Function to display data by sex
+function display_by_sex() {
+    if [[ ! -f $CSV_FILE ]]; then
+        echo "CSV file not found."
+        return
+    fi
+    echo "Enter Sex (M/F):"
+    read sex
+    awk -v sx="$sex" -F, '$3 == sx' $CSV_FILE | nl -ba | tee -a $OUTPUT_FILE
+}
+
+# Function to save the last output to a new CSV file
+function save_output() {
+    if [[ -z $LAST_OUTPUT ]]; then
+        echo "No output to save."
+        return
+    fi
+    echo "Enter the name for the new CSV file:"
+    read csv_name
+    echo "$LAST_OUTPUT" > $csv_name
+    echo "Output saved to $csv_name."
+}
+
+# Function to delete a row by index
+function delete_row() {
+    if [[ ! -f $CSV_FILE ]]; then
+        echo "CSV file not found."
+        return
+    fi
+    echo "Enter the row index to delete:"
+    read row_index
+    sed -i "${row_index}d" $CSV_FILE
+    echo "Row $row_index deleted successfully."
+}
+
+# Function to update weight by row index
+function update_weight() {
+    if [[ ! -f $CSV_FILE ]]; then
+        echo "CSV file not found."
+        return
+    fi
+    echo "Enter the row index to update:"
+    read row_index
+    echo "Enter the new weight:"
+    read new_weight
+    awk -v row=$row_index -v nw=$new_weight -F, 'NR == row {$4 = nw} {print}' OFS=, $CSV_FILE > temp.csv && mv temp.csv $CSV_FILE
+    echo "Weight updated successfully."
+}
+
+# Function to commit and push files to GitHub
+function push_to_github() {
+    git add .
+    git commit -m "Updated CSV file and scripts"
+    git push $GITHUB_REPO_URL
+    echo "Files committed and pushed to GitHub."
+}
+
+# Function to create a Docker container and run the script
+function create_docker_container() {
+    # Create Dockerfile
+    echo "FROM python:3.9-slim
+RUN pip install pandas matplotlib
+COPY . /app
+WORKDIR /app
+CMD [\"python\", \"plant.py\", \"$CSV_FILE\"]" > Dockerfile
+
+    # Build Docker image
+    docker build -t $DOCKER_IMAGE_NAME .
+
+    # Run Docker container
+    docker run --name bash_script_container -v $(pwd)/4_2:/output $DOCKER_IMAGE_NAME
+
+    # Copy files from container to host
+    docker cp bash_script_container:/app/4_2 $(pwd)/4_2
+    echo "Files copied from Docker container to host."
+
+    # Print file names created in the container
+    ls 4_2
+}
+
+# Function to run the script with SQLite instead of CSV
+function run_with_sqlite() {
+    sqlite3 $SQLITE_DB <<EOF
+DROP TABLE IF EXISTS plants;
+CREATE TABLE plants (id INTEGER PRIMARY KEY, DateCollected TEXT, Species TEXT, Sex TEXT, Weight REAL);
+.mode csv
+.import $CSV_FILE plants
+EOF
+
+    python3 plant_sqlite.py $SQLITE_DB
+    echo "Script ran with SQLite database."
+}
+
+# Function to add an R container and perform analysis
+function add_r_container() {
+    echo "FROM r-base
+COPY $CSV_FILE /app/$CSV_FILE
+WORKDIR /app
+RUN R -e \"install.packages('dplyr')\"
+RUN R -e \"install.packages('ggplot2')\"
+COPY analysis.R /app/analysis.R
+CMD [\"Rscript\", \"analysis.R\"]" > Dockerfile_r
+
+    docker build -t r_analysis_image -f Dockerfile_r .
+    docker run --name $R_CONTAINER_NAME -v $(pwd):/output r_analysis_image
+
+    docker cp $R_CONTAINER_NAME:/app/5_R_outputs.txt $(pwd)/5_R_outputs.txt
+    echo "R analysis results copied to host."
+}
+
+# Main menu
+while true; do
+    echo "Select an option:"
+    echo "1. CREATE CSV by name"
+    echo "2. Display all CSV DATA with row INDEX"
+    echo "3. Read user input for new row"
+    echo "4. Read Specie (OT for example) And Display all Items of that specie type and the AVG weight of that type"
+    echo "5. Read Specie sex (M/F) and display all items of specie-sex"
+    echo "6. Save last output to new csv file"
+    echo "7. Delete row by row index"
+    echo "8. Update weight by row index"
+    echo "9. Push files to GitHub"
+    echo "10. Create Docker container and run script"
+    echo "11. Run the script with SQLite database"
+    echo "12. Add R container for analysis"
+    echo "13. Exit"
+    read choice
+
+    case $choice in
+        1) create_csv ;;
+        2) LAST_OUTPUT=$(display_csv) ;;
+        3) add_row ;;
+        4) LAST_OUTPUT=$(display_by_species) ;;
+        5) LAST_OUTPUT=$(display_by_sex) ;;
+        6) save_output ;;
+        7) delete_row ;;
+        8) update_weight ;;
+        9) push_to_github ;;
+        10) create_docker_container ;;
+        11) run_with_sqlite ;;
+        12) add_r_container ;;
+        13) exit ;;
+        *) echo "Invalid option." ;;
+    esac
+done
